@@ -89,7 +89,7 @@ public class RunSimulator {
         bw.close();
     }
 
-    public long runOsmosis(ArrayList<CSVOsmosisAppFromTags.Record> x, double time, String json, String csv, long initTransact) throws Exception{
+    public long runOsmosis(ArrayList<CSVOsmosisAppFromTags.Record> x, int iteration, double time, String json, String csv, long initTransact) throws Exception{
         OsmosisBuilder topologyBuilder;
         OsmesisBroker osmesisBroker;
         OsmesisAppsParser.appList.clear();
@@ -122,7 +122,7 @@ public class RunSimulator {
         // why delete this???????????????
         // new File(csv).delete();
         // new File(json).delete();
-        return CSVOsmosisAppFromTags.dump_current_conf(x, new File(conf.OsmosisOutput), conf.experimentName, 1.0, time, initTransact);
+        return CSVOsmosisAppFromTags.dump_current_conf(x, iteration, new File(conf.OsmosisOutput), conf.experimentName, 1.0, time, initTransact);
     }
 
     public static void decompressGzip(Path source, Path target) throws IOException {
@@ -272,7 +272,7 @@ public class RunSimulator {
                 //we are creating this folder, but it ends up empty?
                 File CSV_CONF_FILE = Paths.get(folderOut.getAbsolutePath(), confCURR+ i + ".csv").toFile();
                 CSVOsmosisRecord.WriteCsv(CSV_CONF_FILE, csvFile);
-                initTransact += runOsmosis(xyz, currTime.doubleValue(), jsonFile.getAbsolutePath(), CSV_CONF_FILE.getAbsolutePath(), initTransact);
+                initTransact += runOsmosis(xyz, i, currTime.doubleValue(), jsonFile.getAbsolutePath(), CSV_CONF_FILE.getAbsolutePath(), initTransact);
             }
         }
 
