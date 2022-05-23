@@ -119,8 +119,9 @@ public class RunSimulator {
         osmesisBroker.setDatacenters(topologyBuilder.getOsmesisDatacentres());
         CloudSim.startSimulation();
         LogUtil.simulationFinished();
-        new File(csv).delete();
-        new File(json).delete();
+        // why delete this???????????????
+        // new File(csv).delete();
+        // new File(json).delete();
         return CSVOsmosisAppFromTags.dump_current_conf(x, new File(conf.OsmosisOutput), conf.experimentName, 1.0, time, initTransact);
     }
 
@@ -153,6 +154,7 @@ public class RunSimulator {
         Document configurationFile = db.parse(file);
         double distanceSquared = conf.maximum_tl_distance_in_meters * conf.maximum_tl_distance_in_meters;
 
+        // osm.net.xml
         File simulationXML = Paths.get(file.getParent(), XPathUtil.evaluate(configurationFile, "/configuration/input/net-file/@value"))
                 .toFile();
         if (!simulationXML.exists()) {
@@ -167,10 +169,12 @@ public class RunSimulator {
         System.out.println("Loading the traffic light information...");
         Document networkFile = db.parse(simulationXML);
         ArrayList<TrafficLightInformation> ls = new ArrayList<>();
+        //getting traffic light info from osm.net.xml
         var traffic_lights = XPathUtil.evaluateNodeList(networkFile, "/net/junction[@type='traffic_light']");
         for (int i = 0, N = traffic_lights.getLength(); i<N; i++) {
             var curr = traffic_lights.item(i).getAttributes();
             TrafficLightInformation tlInfo = new TrafficLightInformation();
+            //saving id and position of the traffic lights
             tlInfo.id = curr.getNamedItem("id").getTextContent();
             tlInfo.x = Double.valueOf(curr.getNamedItem("x").getTextContent());
             tlInfo.y = Double.valueOf(curr.getNamedItem("y").getTextContent());
@@ -179,7 +183,9 @@ public class RunSimulator {
         //System.out.println(ls);
 
         CartesianDistanceFunction f = new CartesianDistanceFunction();
+        //getting info about cars from fcd-output (sumo_trace.xml)
         File trace_info = new File(conf.trace_file);
+
         if (!trace_info.exists()) {
             System.err.println("ERROR: sumo has not built the trace file: " + trace_info.getAbsolutePath());
             System.exit(1);
@@ -189,11 +195,13 @@ public class RunSimulator {
         ArrayList<CSVOsmosisRecord> csvFile = new ArrayList<>();
         var timestamp_eval = XPathUtil.evaluateNodeList(trace_document, "/fcd-export/timestep");
         //ArrayList<Pair<Double, HashMultimap<TrafficLightInformation, VehicleRecord>>> simulation_parsing = new ArrayList<>(timestamp_eval.getLength());
+        //for each timestamp
         for (int i = 0, N = timestamp_eval.getLength(); i<N; i++) {
             csvFile.clear();
             var curr = timestamp_eval.item(i);
             Double currTime = Double.valueOf(curr.getAttributes().getNamedItem("time").getTextContent());
             System.out.println(currTime);
+            //getting all vehicles from the timestamp
             var tag = timestamp_eval.item(i).getChildNodes();
             ArrayList<VehicleRecord> vehs = new ArrayList<>(tag.getLength());
             for (int j = 0, M = tag.getLength(); j<M; j++) {
@@ -201,6 +209,7 @@ public class RunSimulator {
                 if (veh.getNodeType()== Node.ELEMENT_NODE) {
                     assert (Objects.equals(veh.getNodeName(), "vehicle"));
                     var attrs = veh.getAttributes();
+                    //creating vehicle records to drop into osmosis
                     VehicleRecord rec = new VehicleRecord();
                     rec.angle = Double.valueOf(attrs.getNamedItem("angle").getTextContent());
                     rec.x = Double.valueOf(attrs.getNamedItem("x").getTextContent());
@@ -216,11 +225,23 @@ public class RunSimulator {
             }
             if (vehs.isEmpty()) continue;
             var tree = new VPTree<>(f, vehs);
+            //creating a tree for searching cars near traffic light
+            //from config:
+            /*
+               Considering vehicles within this distance from the semaphore
+               maximum_tl_distance_in_meters: 5
+
+             */
+            // f - distance function
+            //vehicles
             List<ConfiguationEntity.IotDeviceEntity> allDevices = new ArrayList<>();
+            //traffic lights
             List<ConfiguationEntity.VMEntity> allDestinations = new ArrayList<>();
             boolean hasSomeResult = false;
+            //iterating through traffic lights
             for (int j = 0, M = ls.size(); j < M; j++) {
                 TrafficLightInformation x = ls.get(j);
+                //getting cars all within distance?
                 var distanceQueryResult = tree.getAllWithinDistance(x, distanceSquared);
                 List<ConfiguationEntity.IotDeviceEntity> iotDev = new ArrayList<>(distanceQueryResult.size());
                 if (!distanceQueryResult.isEmpty()) {
@@ -232,8 +253,10 @@ public class RunSimulator {
                                 conf.battery_sending_rate,
                                 conf.network_type,
                                 conf.protocol));
+                        // adding new entry to csv
                         csvFile.add(new CSVOsmosisRecord(j, x, veh, conf, aMel));
                     }
+                    // adding traffic light? to destination
                     allDestinations.add(x.asVMEntity(conf.VM_pes, conf.VM_mips, conf.VM_ram, conf.VM_storage, conf.VM_bw, conf.VM_cloudletPolicy));
                 }
             }
@@ -241,12 +264,13 @@ public class RunSimulator {
                 canvas.getCloudDatacenter().get(0).setVMs(allDestinations);
                 canvas.getEdgeDatacenter().get(0).setIoTDevices(allDevices);
                 String confCURR = conf.experimentName+"_t"+currTime;
-                File jsonFile =  Paths.get(folderOut.getAbsolutePath(), confCURR+".json").toFile();
+                File jsonFile =  Paths.get(folderOut.getAbsolutePath(), confCURR+ i +".json").toFile();
                 var fw = new FileWriter(jsonFile);
                 gson.toJson(canvas, fw);
                 fw.flush();
                 fw.close();
-                File CSV_CONF_FILE = Paths.get(folderOut.getAbsolutePath(), confCURR+".csv").toFile();
+                //we are creating this folder, but it ends up empty?
+                File CSV_CONF_FILE = Paths.get(folderOut.getAbsolutePath(), confCURR+ i + ".csv").toFile();
                 CSVOsmosisRecord.WriteCsv(CSV_CONF_FILE, csvFile);
                 initTransact += runOsmosis(xyz, currTime.doubleValue(), jsonFile.getAbsolutePath(), CSV_CONF_FILE.getAbsolutePath(), initTransact);
             }
