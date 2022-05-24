@@ -54,6 +54,7 @@ public class SimulatorConf {
     public long VM_bw;
     public  String VM_cloudletPolicy;
     public double terminate_simulation_at;
+    public int nearest_neighbours_no;
 
     public double getTerminate_simulation_at() {
         return terminate_simulation_at;
