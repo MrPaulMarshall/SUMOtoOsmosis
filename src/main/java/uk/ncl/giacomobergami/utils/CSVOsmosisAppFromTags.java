@@ -36,6 +36,7 @@ public class CSVOsmosisAppFromTags {
     public static class Record {
         public int App_ID;
         public String AppName;
+        public int Iteration;
         public int Transaction;
         public double StartTime, FinishTime;
         public String IoTDeviceName, MELName;
@@ -50,6 +51,7 @@ public class CSVOsmosisAppFromTags {
         public String toString() {
             return App_ID +
                     "," + AppName  +
+                    "," + Iteration  +
                     "," + Transaction +
                     "," + StartTime +
                     "," + FinishTime +
@@ -69,7 +71,7 @@ public class CSVOsmosisAppFromTags {
                     "," + TransactionTotalTime ;
         }
 
-        public Record(WorkflowInfo workflowTag, double transactionTotalTime) {
+        public Record(WorkflowInfo workflowTag, double transactionTotalTime, int iteration) {
             Flow f = null;
             int size = workflowTag.getOsmosisLetSize();
             try {
@@ -77,6 +79,7 @@ public class CSVOsmosisAppFromTags {
             } catch (IndexOutOfBoundsException e) { }
             App_ID = (workflowTag.getAppId());
             AppName = workflowTag.getAppName();
+            Iteration = iteration;
             Transaction = (workflowTag.getWorkflowId());
             StartTime = workflowTag.getSartTime();
             FinishTime = workflowTag.getFinishTime();
@@ -112,6 +115,7 @@ public class CSVOsmosisAppFromTags {
 
     public static String[] headerApp = new String[]{"App_ID"
             ,"AppName"
+            ,"Iteration"
             ,"Transaction"
             ,"StartTime"
             ,"FinishTime"
@@ -131,7 +135,7 @@ public class CSVOsmosisAppFromTags {
             , "TransactionTotalTime"};
 
 
-    public static long dump_current_conf(ArrayList<Record> xyz, File parent, String prefix, double max_time, double offset, long initTransact) throws IOException {
+    public static long dump_current_conf(ArrayList<Record> xyz, int iteration, File parent, String prefix, double max_time, double offset, long initTransact) throws IOException {
         if (! parent.exists()){
             parent.mkdirs();
         } else if (parent.isFile())  {
@@ -144,7 +148,7 @@ public class CSVOsmosisAppFromTags {
         }
         ArrayList<Record> ls = new ArrayList<>();
         for(var x : map.asMap().entrySet()){
-            printOsmesisApp(ls, x.getValue());
+            printOsmesisApp(ls, x.getValue(), iteration);
         }
         double max = ls.stream().map(x -> x.FinishTime).max(Double::compare).get();
         for (var x : ls)
@@ -168,7 +172,7 @@ public class CSVOsmosisAppFromTags {
         return (long)ls.size();
     }
 
-    public static void printOsmesisApp(List<Record> bw, Collection<WorkflowInfo> tags) throws IOException {
+    public static void printOsmesisApp(List<Record> bw, Collection<WorkflowInfo> tags, int iteration) throws IOException {
         double transactionTransmissionTime = 0;
         double transactionOsmosisLetTime = 0;
         double transactionTotalTime;
@@ -185,7 +189,7 @@ public class CSVOsmosisAppFromTags {
                 transactionOsmosisLetTime += let.getActualCPUTime();
             }
 
-            bw.add(new Record(workflowTag, transactionTransmissionTime +  transactionOsmosisLetTime));
+            bw.add(new Record(workflowTag, transactionTransmissionTime +  transactionOsmosisLetTime, iteration));
         }
     }
 
