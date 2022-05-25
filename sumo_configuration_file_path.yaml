@@ -42,3 +42,6 @@ VM_bw : 1000
 VM_cloudletPolicy: "org.cloudbus.cloudsim.CloudletSchedulerTimeShared"
 #VM_vmm: "xxx"
 terminate_simulation_at: 0
+# 0 - use getAllWithinDistance(); 1 - use getNearestNeighbors()
+use_nearest_neighbours: 1
+nearest_neighbours_no: 1

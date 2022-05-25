@@ -242,7 +242,12 @@ public class RunSimulator {
             for (int j = 0, M = ls.size(); j < M; j++) {
                 TrafficLightInformation x = ls.get(j);
                 //getting cars all within distance?
-                var distanceQueryResult = tree.getAllWithinDistance(x, distanceSquared);
+                List<VehicleRecord> distanceQueryResult;
+                if (conf.use_nearest_neighbours == 0) {
+                    distanceQueryResult = tree.getAllWithinDistance(x, distanceSquared);
+                } else {
+                    distanceQueryResult = tree.getNearestNeighbors(x, conf.nearest_neighbours_no);
+                }
                 List<ConfiguationEntity.IotDeviceEntity> iotDev = new ArrayList<>(distanceQueryResult.size());
                 if (!distanceQueryResult.isEmpty()) {
                     hasSomeResult = true;
