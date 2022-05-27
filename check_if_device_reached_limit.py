@@ -1,30 +1,17 @@
 from numpy import int16
 
+def count_turns_with_exceeded_limit(device_id, limit, src):
+    import pandas as pd
+
+    data = pd.read_csv(src, usecols=['DestinationVmName', 'Iteration'])[['DestinationVmName', 'Iteration']]
+    iterations = data[data['DestinationVmName'] == device_id]
+    aggregated = iterations.groupby('Iteration').size().reset_index(name='Count')
+    exceeded = aggregated[aggregated['Count'] > limit]
+
+    print(exceeded.shape[0])
+
 def main(device_id, limit, src):
-    import numpy as np
-
-    data = np.genfromtxt(src, delimiter=',', usecols=(7, 2), skip_header=1, dtype=np.object_)#, dtype=['U15', np.uint16])
-    iterations = data[data[:, 0] == device_id.encode('utf-8')][:, 1]
-
-    count_unique = {}
-    for row in iterations:
-        it = int(row)
-        if it not in count_unique:
-            count_unique[it] = 0
-        count_unique[it] += 1
-
-    result = []
-    count_exceeded = 0
-    for iter in count_unique.keys():
-        count = count_unique[iter]
-        result.append([iter, count])
-        if count > limit:
-            count_exceeded += 1
-    
-    result = np.array(result)
-    result = result[result[:, 0].argsort(kind='stable')]
-
-    print(f'Device \'{device_id}\' has exceeded its limit of {limit} request on {count_exceeded} turns')
+    count_turns_with_exceeded_limit(device_id, limit, src)
 
 if __name__ == '__main__':
     import sys
@@ -36,5 +23,5 @@ if __name__ == '__main__':
     
     device_id = sys.argv[1]
     limit = int(sys.argv[2])
-    source = f'osmosis_csv/{sys.argv[3]}'
+    source = sys.argv[3]
     main(device_id, limit, source)
