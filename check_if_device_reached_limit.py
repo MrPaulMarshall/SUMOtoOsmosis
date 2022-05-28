@@ -1,4 +1,7 @@
-from numpy import int16
+def print_error(argv):
+    print(f'Incorrect number of arguments: {len(argv) - 1}; should be 3\n')
+    print('Correct use looks like:')
+    print(f'\tpython {argv[0]} <device-id> <limit> <src-filename>.csv')
 
 def count_turns_with_exceeded_limit(device_id, limit, src):
     import pandas as pd
@@ -16,9 +19,7 @@ def main(device_id, limit, src):
 if __name__ == '__main__':
     import sys
     if len(sys.argv) != 4:
-        print(f'Incorrect number of arguments: {len(sys.argv) - 1}; should be 3\n')
-        print('Correct use looks like:')
-        print(f'\tpython {sys.argv[0]} <device-id> <limit> <src-filename>.csv')
+        print_error(sys.argv)
         sys.exit('')
     
     device_id = sys.argv[1]
