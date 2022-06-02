@@ -194,6 +194,13 @@ public class RunSimulator {
         Document trace_document = db.parse(trace_info);
         ArrayList<CSVOsmosisRecord> csvFile = new ArrayList<>();
         var timestamp_eval = XPathUtil.evaluateNodeList(trace_document, "/fcd-export/timestep");
+
+        /* Open the <osmosis_result>.csv file */
+        FileOutputStream fos = new FileOutputStream(Paths.get(new File(conf.OsmosisOutput).getAbsolutePath(), conf.experimentName+".csv").toFile());
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+        bw.write(String.join(",", CSVOsmosisAppFromTags.headerApp));
+        bw.newLine();
+
         //ArrayList<Pair<Double, HashMultimap<TrafficLightInformation, VehicleRecord>>> simulation_parsing = new ArrayList<>(timestamp_eval.getLength());
         //for each timestamp
         for (int i = 0, N = timestamp_eval.getLength(); i<N; i++) {
@@ -278,17 +285,19 @@ public class RunSimulator {
                 File CSV_CONF_FILE = Paths.get(folderOut.getAbsolutePath(), confCURR+ i + ".csv").toFile();
                 CSVOsmosisRecord.WriteCsv(CSV_CONF_FILE, csvFile);
                 initTransact += runOsmosis(xyz, i, currTime.doubleValue(), jsonFile.getAbsolutePath(), CSV_CONF_FILE.getAbsolutePath(), initTransact);
+
+                /* Write results to <osmosis_result>.csv file */
+                for (var x : xyz) {
+                    bw.write(String.join(",", x.toString()));
+                    bw.newLine();
+                }
+                bw.flush();
+                /* Clear output array to avoid memory errors */
+                xyz.clear();
             }
         }
 
-        FileOutputStream fos = new FileOutputStream(Paths.get(new File(conf.OsmosisOutput).getAbsolutePath(), conf.experimentName+".csv").toFile());
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
-        bw.write(String.join(",", CSVOsmosisAppFromTags.headerApp));
-        bw.newLine();
-        for (var x : xyz) {
-            bw.write(String.join(",", x.toString()));
-            bw.newLine();
-        }
+        /* Close <osmosis_result>.csv file stream */
         bw.close();
         fos.close();
     }
