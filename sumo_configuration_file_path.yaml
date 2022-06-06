@@ -9,7 +9,7 @@ logger_file: "sumo_log.txt"
 # Beginning time of the simulation (--begin)
 begin: 0
 # End time of the simulation (--end)
-end: 5000
+end: 1000
 # Output of sumo's simulation (--fcd-output)
 trace_file: "Test_Simulation_Berlin_trace.xml"
 # Considering vehicles within this distance from the semaphore
